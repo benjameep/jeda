@@ -1,0 +1,2 @@
+recursive-include jeda/static *.*
+include jeda.json
