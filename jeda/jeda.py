@@ -50,11 +50,20 @@ def parse_columns(df):
         counts.columns = ['name','count']
         counts['percent'] = (counts['count'] / counts['count'].max()) * 100
         
+        typ = 'discrete'
+        if len(counts) > 10 and pd.api.types.is_numeric_dtype(df[col]):
+            typ = 'continuous'
+        
         column = {
             'name':col,
+            'type':typ,
             'na':df[col].isna().sum(),
             'values':counts.to_dict('records')
         }
+        
+        if typ == 'continuous':
+            column['min'] = counts['name'].min()
+            column['max'] = counts['name'].max()
         
         columns.append(column)
     

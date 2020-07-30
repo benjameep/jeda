@@ -1,12 +1,20 @@
 .columns
-  for column in columns
-    .column
+  for column in columns ? columns : []
+    .column(class=column.type)
       .head
         h2= column.name
       .body
-        each value in column.values
-          .value
-            .name= value.name
-            .count= value.count
-            .bar
-              div(style="width:"+value.percent+'%')
+        if column.type == 'discrete'
+          each value in column.values
+            .value
+              .name= value.name
+              .count= value.count
+              .bar
+                div(style="width:"+value.percent+'%')
+        else if column.type == 'continuous'
+          .ticks
+            each label in column.labels
+              .tick=label
+          .bars
+            each value in column.values
+              .bar(style={width:value.percent+'%',top:value.y+'px'})
