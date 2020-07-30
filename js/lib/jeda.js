@@ -1,6 +1,6 @@
 var widgets = require('@jupyter-widgets/base');
 var _ = require('lodash');
-require('./style.css')
+require('./style.scss')
 var template = require('./index.pug')
 
 // See example.py for the kernel counterpart to this file.
@@ -62,6 +62,9 @@ function linear_map(val, dmin, dmax, rmin, rmax){
     return ((val-dmin)/(dmax-dmin))*(rmax-rmin)+rmin
 }
 
+const TEXT_SIZE = 14;
+const LINE_HEIGHT = 16;
+const BAR_HEIGHT = 6;
 
 // Custom View. Renders the widget model.
 var JedaView = widgets.DOMWidgetView.extend({
@@ -85,8 +88,8 @@ var JedaView = widgets.DOMWidgetView.extend({
                 col.labels = calc_labels(col.min, col.max)
                 dmin = col.labels[0]
                 dmax = col.labels[col.labels.length-1]
-                rmin = 4
-                rmax = (col.labels.length * 16) - 11
+                rmin = (TEXT_SIZE-BAR_HEIGHT)/2
+                rmax = (col.labels.length * LINE_HEIGHT) - (LINE_HEIGHT+BAR_HEIGHT)/2
                 col.values.forEach(val => {
                     val.y = Math.round(linear_map(val.name, dmin, dmax, rmin, rmax))
                 })

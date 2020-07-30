@@ -1,0 +1,92 @@
+$bar-width: 50px;
+$bar-color: #ABABAB;
+
+.jeda {
+  .columns {
+    display: flex;
+    flex-flow: row wrap;
+    align-items: flex-start;
+  }
+
+  .column {
+    display: inline-block;
+    font-family: monospace;
+    margin: 3px;
+    border: 1px solid #cfcfcf;
+    border-radius: 2px;
+    background: #f7f7f7;
+
+    .head {
+      background-color: #EEE;
+      border-bottom: 1px solid #cfcfcf;
+      padding: 2px;
+      
+      h2 {
+        font-size: 15px;
+        margin: 0px;
+        font-weight: normal;
+        text-align: center;
+      }
+    }
+    
+    .body {
+      font-size: 14px;
+      padding: 6px;
+      line-height: 16px;
+      
+      .value {
+        display: flex;
+        justify-content: flex-end;
+        
+        .count {
+          width: 35px;
+          text-align: right;
+          padding: 0px 5px;
+          color: #515151;
+        }
+        
+        .bar {
+          width: $bar-width;
+          display: flex;
+          align-items: center;
+          
+          div {
+            background-color: $bar-color;
+            border-radius: 0px 10px 10px 0px;
+            height: 12px;
+          }
+        }
+      }
+    }
+  }
+  
+  .column.continuous {
+    .body {
+      display: flex;
+      justify-content: flex-end;
+      position: relative;
+      
+      .ticks {
+        position: relative;
+        
+        .tick {
+          text-align: right;
+          margin-right: 5px;
+        }
+      }
+      
+      .bars {
+        width: $bar-width;
+        position: relative;
+      
+        .bar {
+          background-color: $bar-color;
+          border-radius: 0px 10px 10px 0px;
+          height: 6px;
+          position: absolute;
+        }
+      }
+    }
+  }
+}
+

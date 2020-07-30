@@ -11,6 +11,7 @@ var plugins = [
 ]
 
 var rules = [
+    { test: /\.s[ac]ss$/, use: ['style-loader','css-loader','sass-loader'] },
     { test: /\.css$/, use: ['style-loader', 'css-loader']},
     { test: /\.pug$/, use: ['pug-loader']},
 ]
