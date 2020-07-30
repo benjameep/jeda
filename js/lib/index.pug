@@ -1,0 +1,12 @@
+.columns
+  for column in columns
+    .column
+      .head
+        h2= column.name
+      .body
+        each value in column.values
+          .value
+            .name= value.name
+            .count= value.count
+            .bar
+              div(style="width:"+value.percent+'%')

@@ -1,10 +1,18 @@
 var path = require('path');
 var version = require('./package.json').version;
+var HtmlWebpackPlugin = require('html-webpack-plugin');
 
 // Custom webpack rules are generally the same for all webpack bundles, hence
 // stored in a separate local variable.
+var plugins = [
+    new HtmlWebpackPlugin({
+        template: './lib/index.pug'
+    })
+]
+
 var rules = [
-    { test: /\.css$/, use: ['style-loader', 'css-loader']}
+    { test: /\.css$/, use: ['style-loader', 'css-loader']},
+    { test: /\.pug$/, use: ['pug-loader']},
 ]
 
 
@@ -22,7 +30,7 @@ module.exports = [
             filename: 'extension.js',
             path: path.resolve(__dirname, '..', 'jeda', 'static'),
             libraryTarget: 'amd'
-        }
+        },
     },
     {// Bundle for the notebook containing the custom widget views and models
      //
@@ -40,7 +48,8 @@ module.exports = [
         module: {
             rules: rules
         },
-        externals: ['@jupyter-widgets/base']
+        externals: ['@jupyter-widgets/base'],
+        plugins,
     },
     {// Embeddable jeda bundle
      //
@@ -67,6 +76,7 @@ module.exports = [
         module: {
             rules: rules
         },
-        externals: ['@jupyter-widgets/base']
+        externals: ['@jupyter-widgets/base'],
+        plugins,
     }
 ];

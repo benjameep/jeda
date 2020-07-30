@@ -1,5 +1,7 @@
 var widgets = require('@jupyter-widgets/base');
 var _ = require('lodash');
+require('./style.css')
+var template = require('./index.pug')
 
 // See example.py for the kernel counterpart to this file.
 
@@ -27,7 +29,7 @@ var JedaModel = widgets.DOMWidgetModel.extend({
         _view_module : 'jeda',
         _model_module_version : '0.1.0',
         _view_module_version : '0.1.0',
-        value : 'Hello World!'
+        columns : [],
     })
 });
 
@@ -38,15 +40,18 @@ var JedaView = widgets.DOMWidgetView.extend({
     render: function() {
         this.el.classList.add('jeda')
 
-        this.value_changed();
+        this.columns_changed();
 
         // Observe changes in the value traitlet in Python, and define
         // a custom callback.
-        this.model.on('change:value', this.value_changed, this);
+        this.model.on('change:columns', this.columns_changed, this);
     },
 
-    value_changed: function() {
-        this.el.textContent = this.model.get('value');
+    columns_changed: function() {
+        console.log(this.model.get('columns'))
+        this.el.innerHTML = template({
+            columns: this.model.get('columns')
+        });
     }
 });
 

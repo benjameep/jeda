@@ -1,5 +1,5 @@
 import ipywidgets as widgets
-from traitlets import Unicode, Any, TraitError, validate, observe
+from traitlets import Unicode, Any, List, TraitError, validate, observe
 import pandas as pd
 
 # See js/lib/example.js for the frontend counterpart to this file.
@@ -30,6 +30,7 @@ class Jeda(widgets.DOMWidget):
     # is automatically synced to the frontend *any* time it changes in Python.
     # It is synced back to Python from the frontend *any* time the model is touched.
     data = Any().tag(sync=False)
+    columns = List([]).tag(sync=True)
     
     @validate('data')
     def _valid_data(self,proposal):
@@ -40,13 +41,14 @@ class Jeda(widgets.DOMWidget):
     @observe('data')
     def _observe_data(self, change):
         df = change['new']
+        self.columns = parse_columns(df)
 
 def parse_columns(df):
     columns = []
     for col in df:
         counts = df[col].value_counts().sort_index().reset_index()
         counts.columns = ['name','count']
-        counts['percent'] = counts['count'] / counts['count'].max()
+        counts['percent'] = (counts['count'] / counts['count'].max()) * 100
         
         column = {
             'name':col,
