@@ -85,15 +85,15 @@ var JedaView = widgets.DOMWidgetView.extend({
                 col.labels = calc_labels(col.min, col.max)
                 dmin = col.labels[0]
                 dmax = col.labels[col.labels.length-1]
-                rmin = 6
-                rmax = (col.labels.length * 20) - 14
+                rmin = 4
+                rmax = (col.labels.length * 16) - 11
                 col.values.forEach(val => {
-                    val.y = linear_map(val.name, dmin, dmax, rmin, rmax)
+                    val.y = Math.round(linear_map(val.name, dmin, dmax, rmin, rmax))
                 })
             }
         })
 
-        console.log(columns)
+        console.log(JSON.stringify(columns))
 
         this.el.innerHTML = template({columns});
     }
