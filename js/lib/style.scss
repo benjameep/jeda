@@ -1,6 +1,7 @@
 $bar-width: 50px;
-$bar-color: #ABABAB;
+$bar-color: #97c4be;
 $border: 1px solid #cfcfcf;
+$light-text-color: #515151;
 
 .jeda {
   .columns {
@@ -35,6 +36,14 @@ $border: 1px solid #cfcfcf;
       padding: 6px;
       line-height: 16px;
       
+      .nan {
+        font-style: italic;
+      }
+      
+      .count {
+        color: $light-text-color;
+      }
+      
       .value {
         display: flex;
         justify-content: flex-end;
@@ -43,7 +52,6 @@ $border: 1px solid #cfcfcf;
           width: 35px;
           text-align: right;
           padding: 0px 5px;
-          color: #515151;
         }
         
         .bar {
@@ -58,36 +66,38 @@ $border: 1px solid #cfcfcf;
           }
         }
       }
-    }
-  }
-  
-  .column.continuous {
-    .body {
-      display: flex;
-      justify-content: flex-end;
-      position: relative;
       
-      .ticks {
+      .continuous.values {
+        display: flex;
+        justify-content: flex-end;
         position: relative;
-        
-        .tick {
-          text-align: right;
-          margin-right: 5px;
+
+        .ticks {
+          position: relative;
+
+          .tick {
+            text-align: right;
+            margin-right: 5px;
+          }
         }
-      }
-      
-      .bars {
-        width: $bar-width;
-        position: relative;
-      
-        .bar {
-          background-color: $bar-color;
-          border-radius: 0px 10px 10px 0px;
-          height: 6px;
-          position: absolute;
+
+        .bars {
+          width: $bar-width;
+          position: relative;
+
+          .bar {
+            background-color: $bar-color;
+            border-radius: 0px 10px 10px 0px;
+            height: 6px;
+            position: absolute;
+          }
+          
+          .count {
+            position: absolute;
+            bottom: 0px;
+          }
         }
       }
     }
   }
 }
-

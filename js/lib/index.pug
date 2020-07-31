@@ -1,20 +1,32 @@
-.columns
-  for column in columns ? columns : []
-    .column(class=column.type)
-      .head
-        h2= column.name
-      .body
-        if column.type == 'discrete'
-          each value in column.values
-            .value
-              .name= value.name
-              .count= value.count
-              .bar
-                div(style="width:"+value.percent+'%')
-        else if column.type == 'continuous'
-          .ticks
-            each label in column.labels
-              .tick=label
-          .bars
+.jeda
+  .columns
+    for column in columns ? columns : []
+      .column
+        .head
+          h2= column.name
+        .body
+          if column.type == 'discrete'
             each value in column.values
-              .bar(style={width:value.percent+'%',top:value.y+'px'})
+              .value
+                .name= value.name
+                .count= value.count
+                .bar
+                  div(style={width:value.count/column.max_count*100+'%'})
+            if column.na
+              .value
+                .name.nan nan
+                .count= column.na
+                .bar
+                  div
+          else if column.type == 'continuous'
+            .values.continuous
+              .ticks
+                each label in column.labels
+                  .tick=label
+                if column.na
+                  .tick.nan nan
+              .bars
+                each value in column.values
+                  .bar(style={width:value.count/column.max_count*100+'%',top:value.y+'px'})
+                if column.na
+                  .count= column.na

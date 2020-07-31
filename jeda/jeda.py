@@ -48,7 +48,6 @@ def parse_columns(df):
     for col in df:
         counts = df[col].value_counts().sort_index().reset_index()
         counts.columns = ['name','count']
-        counts['percent'] = ((counts['count'] / counts['count'].max()) * 100).round(1)
         
         typ = 'discrete'
         if len(counts) > 10 and pd.api.types.is_numeric_dtype(df[col]):
@@ -58,7 +57,8 @@ def parse_columns(df):
             'name':col,
             'type':typ,
             'na':df[col].isna().sum(),
-            'values':counts.to_dict('records')
+            'values':counts.to_dict('records'),
+            'max_count': counts['count'].max(),
         }
         
         if typ == 'continuous':
