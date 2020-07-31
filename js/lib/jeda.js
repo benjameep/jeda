@@ -86,13 +86,13 @@ var JedaView = widgets.DOMWidgetView.extend({
         columns.forEach(col => {
             if(col.type == 'continuous'){
                 col.labels = calc_labels(col.min, col.max)
-                dmin = col.labels[0]
-                dmax = col.labels[col.labels.length-1]
-                rmin = (TEXT_SIZE-BAR_HEIGHT)/2
-                rmax = (col.labels.length * LINE_HEIGHT) - (LINE_HEIGHT+BAR_HEIGHT)/2
-                col.values.forEach(val => {
-                    val.y = Math.round(linear_map(val.name, dmin, dmax, rmin, rmax))
-                })
+                // dmin = col.labels[0]
+                // dmax = col.labels[col.labels.length-1]
+                // rmin = (TEXT_SIZE-BAR_HEIGHT)/2
+                // rmax = (col.labels.length * LINE_HEIGHT) - (LINE_HEIGHT+BAR_HEIGHT)/2
+                // col.values.forEach(val => {
+                //     val.y = Math.round(linear_map(val.name, dmin, dmax, rmin, rmax))
+                // })
             }
         })
 

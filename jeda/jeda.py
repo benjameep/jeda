@@ -57,7 +57,8 @@ def parse_columns(df):
             'name':col,
             'type':typ,
             'na':df[col].isna().sum(),
-            'values':counts.to_dict('records'),
+            'values':counts['name'].to_list(),
+            'counts':counts['count'].to_list(),
             'max_count': counts['count'].max(),
         }
         
