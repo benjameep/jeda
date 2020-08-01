@@ -1,32 +1,56 @@
+- var TEXT_SIZE = 14;
+- var LINE_HEIGHT = 16;
+- var CONTINUOUS_BAR_HEIGHT = 6;
+- var DISCRETE_BAR_HEIGHT = 12;
+
+-
+  function linear_map(val, dmin, dmax, rmin, rmax){
+    return ((val-dmin)/(dmax-dmin))*(rmax-rmin)+rmin
+  }
+
 .jeda
   .columns
-    for column in columns ? columns : []
+    each column in columns ? columns : []
       .column
         .head
           h2= column.name
-        .body
+        .body(class=column.type)
+          - var bar_height = column.type == 'discrete' ? DISCRETE_BAR_HEIGHT : CONTINUOUS_BAR_HEIGHT;
+          - var pad_top = (LINE_HEIGHT - bar_height) / 2;
+          - var pad_bottom = (LINE_HEIGHT + bar_height) / 2;
           if column.type == 'discrete'
-            each value in column.values
-              .value
-                .name= value.name
-                .count= value.count
-                .bar
-                  div(style={width:value.count/column.max_count*100+'%'})
-            if column.na
-              .value
+            .names
+              each value in column.values
+                .name= value
+              if column.na
                 .name.nan nan
+            .counts
+              each count in column.counts
+                .count= count
+              if column.na
                 .count= column.na
-                .bar
-                  div
+            .bars
+              each value,i in column.values
+                - var count = column.counts[i]
+                .bar(style={
+                  width:(count/column.max_count*100)+'%',
+                  top:(pad_top + LINE_HEIGHT*i)+'px'
+                })
           else if column.type == 'continuous'
-            .values.continuous
-              .ticks
-                each label in column.labels
-                  .tick=label
-                if column.na
-                  .tick.nan nan
-              .bars
-                each value in column.values
-                  .bar(style={width:value.count/column.max_count*100+'%',top:value.y+'px'})
-                if column.na
-                  .count= column.na
+            - var dmin = column.labels[0]
+            - var dmax = column.labels[column.labels.length-1]
+            - var height = column.labels.length * LINE_HEIGHT
+            .names
+              each label in column.labels
+                .name=label
+              if column.na
+                .name.nan nan
+            .bars
+              each value,i in column.values
+                - var count = column.counts[i]
+                .bar(style={
+                  width:(count/column.max_count*100)+'%',
+                  top:linear_map(value,dmin, dmax, pad_top, height-pad_bottom)+'px',
+                })
+              if column.na
+                .count= column.na

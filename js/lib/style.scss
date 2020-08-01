@@ -1,7 +1,10 @@
 $bar-width: 50px;
-$bar-color: #97c4be;
+$bar-color: #8CC5C9;
 $border: 1px solid #cfcfcf;
 $light-text-color: #515151;
+$highlight: #8CC5C9;
+$highlight-text: white;
+
 
 .jeda {
   .columns {
@@ -17,6 +20,16 @@ $light-text-color: #515151;
     border: $border;
     border-radius: 2px;
     background: #f7f7f7;
+    
+    &.selected {
+      border-color: $highlight;
+      
+      .head {
+        border-color: $highlight;
+        background-color: $highlight;
+        color: $highlight-text;
+      }
+    }
 
     .head {
       background-color: #EEE;
@@ -35,70 +48,52 @@ $light-text-color: #515151;
       font-size: 14px;
       padding: 6px;
       line-height: 16px;
+      display: flex;
+      justify-content: flex-end;
+      position: relative;
       
       .nan {
         font-style: italic;
       }
       
+      .names {
+        margin-right: 5px;
+
+        .name {
+          text-align: right;
+        }
+      }
+      
+      .counts {
+        margin-left: 2px;
+        margin-right: 3px;
+      }
+      
       .count {
         color: $light-text-color;
+        text-align: right;
+        font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
       }
       
-      .value {
-        display: flex;
-        justify-content: flex-end;
-        
-        .count {
-          width: 35px;
-          text-align: right;
-          padding: 0px 5px;
-          font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-        }
-        
-        .bar {
-          width: $bar-width;
-          display: flex;
-          align-items: center;
-          
-          div {
-            background-color: $bar-color;
-            border-radius: 0px 10px 10px 0px;
-            height: 12px;
-          }
-        }
-      }
-      
-      .continuous.values {
-        display: flex;
-        justify-content: flex-end;
+      .bars {
+        width: $bar-width;
         position: relative;
 
-        .ticks {
-          position: relative;
-
-          .tick {
-            text-align: right;
-            margin-right: 5px;
-          }
+        .bar {
+          background-color: $bar-color;
+          border-radius: 0px 10px 10px 0px;
+          position: absolute;
         }
-
-        .bars {
-          width: $bar-width;
-          position: relative;
-
-          .bar {
-            background-color: $bar-color;
-            border-radius: 0px 10px 10px 0px;
-            height: 6px;
-            position: absolute;
-          }
-          
-          .count {
-            position: absolute;
-            bottom: 0px;
-          }
+        
+        .count {
+          bottom: 0px;
+          position: absolute;
         }
       }
-    }
+    }    
   }
+  
+  /* If you update these values, also update the values in the pug file */
+  .body.discrete .bar { height: 12px; }
+  .body.continuous .bar { height: 6px; }
 }
