@@ -4,6 +4,7 @@ $border: 1px solid #cfcfcf;
 $light-text-color: #515151;
 $highlight: #8CC5C9;
 $highlight-text: white;
+$disabled: #C5C5C5;
 
 
 .jeda {
@@ -52,15 +53,29 @@ $highlight-text: white;
       justify-content: flex-end;
       position: relative;
       
+      .selection {
+        position: absolute;
+        right: 5px;
+        left: 5px;
+        background-color: $highlight;
+        border-radius: 2px;
+      }
+      
+      .selected { color: $highlight-text; }
+      
       .nan {
         font-style: italic;
       }
+      
+      .names, .counts, .bars { z-index: 1; }
       
       .names {
         margin-right: 5px;
 
         .name {
           text-align: right;
+          
+          &.disabled { color: $disabled; }
         }
       }
       
@@ -73,6 +88,8 @@ $highlight-text: white;
         color: $light-text-color;
         text-align: right;
         font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+        
+        &.disabled { color: $disabled }
       }
       
       .bars {
@@ -83,6 +100,9 @@ $highlight-text: white;
           background-color: $bar-color;
           border-radius: 0px 10px 10px 0px;
           position: absolute;
+          
+          &.selected { background-color: $highlight-text; }
+          &.disabled { display: none; }
         }
         
         .count {

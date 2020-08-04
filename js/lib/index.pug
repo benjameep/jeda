@@ -18,6 +18,9 @@
           - var bar_height = column.type == 'discrete' ? DISCRETE_BAR_HEIGHT : CONTINUOUS_BAR_HEIGHT;
           - var pad_top = (LINE_HEIGHT - bar_height) / 2;
           - var pad_bottom = (LINE_HEIGHT + bar_height) / 2;
+          
+          .selection
+          
           if column.type == 'discrete'
             .names
               each value in column.values
