@@ -6,12 +6,20 @@ $highlight: #8CC5C9;
 $highlight-text: white;
 $disabled: #C5C5C5;
 
+// Magic Numbers shared across mulitple files
+$TEXT_SIZE: 14px;
+$LINE_HEIGHT: 16px;
+$CONTINUOUS_BAR_HEIGHT: 6px;
+$DISCRETE_BAR_HEIGHT: 12px;
+$BODY_PADDING: 6px;
+
 
 .jeda {
   .columns {
     display: flex;
     flex-flow: row wrap;
     align-items: flex-start;
+    user-select: none;
   }
 
   .column {
@@ -46,9 +54,9 @@ $disabled: #C5C5C5;
     }
     
     .body {
-      font-size: 14px;
-      padding: 6px;
-      line-height: 16px;
+      font-size: $TEXT_SIZE;
+      padding: $BODY_PADDING;
+      line-height: $LINE_HEIGHT;
       display: flex;
       justify-content: flex-end;
       position: relative;
@@ -113,7 +121,133 @@ $disabled: #C5C5C5;
     }    
   }
   
-  /* If you update these values, also update the values in the pug file */
-  .body.discrete .bar { height: 12px; }
-  .body.continuous .bar { height: 6px; }
+  .body.discrete .bar { height: $DISCRETE_BAR_HEIGHT; }
+  .body.continuous .bar { height: $CONTINUOUS_BAR_HEIGHT; }
+}
+
+$bar-width: 50px;
+$bar-color: #8CC5C9;
+$border: 1px solid #cfcfcf;
+$light-text-color: #515151;
+$highlight: #8CC5C9;
+$highlight-text: white;
+$disabled: #C5C5C5;
+
+// Magic Numbers shared across mulitple files
+$TEXT_SIZE: 14px;
+$LINE_HEIGHT: 16px;
+$CONTINUOUS_BAR_HEIGHT: 6px;
+$DISCRETE_BAR_HEIGHT: 12px;
+$BODY_PADDING: 6px;
+
+
+.jeda {
+  .columns {
+    display: flex;
+    flex-flow: row wrap;
+    align-items: flex-start;
+    user-select: none;
+  }
+
+  .column {
+    display: inline-block;
+    font-family: monospace;
+    margin: 3px;
+    border: $border;
+    border-radius: 2px;
+    background: #f7f7f7;
+    
+    &.selected {
+      border-color: $highlight;
+      
+      .head {
+        border-color: $highlight;
+        background-color: $highlight;
+        color: $highlight-text;
+      }
+    }
+
+    .head {
+      background-color: #EEE;
+      border-bottom: $border;
+      padding: 2px;
+      
+      h2 {
+        font-size: 15px;
+        margin: 0px;
+        font-weight: normal;
+        text-align: center;
+      }
+    }
+    
+    .body {
+      font-size: $TEXT_SIZE;
+      padding: $BODY_PADDING;
+      line-height: $LINE_HEIGHT;
+      display: flex;
+      justify-content: flex-end;
+      position: relative;
+      
+      .selection {
+        position: absolute;
+        right: 5px;
+        left: 5px;
+        background-color: $highlight;
+        border-radius: 2px;
+      }
+      
+      .selected { color: $highlight-text; }
+      
+      .nan {
+        font-style: italic;
+      }
+      
+      .names, .counts, .bars { z-index: 1; }
+      
+      .names {
+        margin-right: 5px;
+
+        .name {
+          text-align: right;
+          
+          &.disabled { color: $disabled; }
+        }
+      }
+      
+      .counts {
+        margin-left: 2px;
+        margin-right: 3px;
+      }
+      
+      .count {
+        color: $light-text-color;
+        text-align: right;
+        font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+        
+        &.disabled { color: $disabled }
+      }
+      
+      .bars {
+        width: $bar-width;
+        position: relative;
+
+        .bar {
+          background-color: $bar-color;
+          border-radius: 0px 10px 10px 0px;
+          position: absolute;
+          
+          &.selected { background-color: $highlight-text; }
+          &.disabled { display: none; }
+        }
+        
+        .count {
+          bottom: 0px;
+          position: absolute;
+        }
+      }
+    }    
+  }
+  
+  .body.discrete .bar { height: $DISCRETE_BAR_HEIGHT; }
+  .body.continuous .bar { height: $CONTINUOUS_BAR_HEIGHT; }
 }

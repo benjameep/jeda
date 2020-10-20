@@ -30,6 +30,8 @@ var JedaModel = widgets.DOMWidgetModel.extend({
         _model_module_version : '0.1.0',
         _view_module_version : '0.1.0',
         columns : [],
+        selecting: null,
+        selections: [],
     })
 });
 
@@ -65,13 +67,15 @@ function linear_map(val, dmin, dmax, rmin, rmax){
 const TEXT_SIZE = 14;
 const LINE_HEIGHT = 16;
 const BAR_HEIGHT = 6;
+const BODY_PADDING = 6;
 
 // Custom View. Renders the widget model.
 var JedaView = widgets.DOMWidgetView.extend({
+    tagName: 'div',
+    className:'benjamin',
+
     // Defines how the widget gets rendered into the DOM
     render: function() {
-        this.el.classList.add('jeda')
-
         this.columns_changed();
 
         // Observe changes in the value traitlet in Python, and define
@@ -98,10 +102,143 @@ var JedaView = widgets.DOMWidgetView.extend({
 
         console.log(JSON.stringify(columns))
 
+
         this.el.innerHTML = template({columns});
+
+        this.el.querySelectorAll('.column').forEach(($col,i) => {
+            var $body = $col.querySelector('.body')
+            $body.addEventListener('mousedown',this.on_column_mousedown.bind(this,$body,columns[i]))
+            $body.addEventListener('mouseup',this.on_column_mouseup.bind(this,$body,columns[i]))
+        })
+    },
+
+    calc_selection($body, _col, e){
+        var rect = $body.getBoundingClientRect();
+        var y = e.clientY - rect.top - BODY_PADDING;
+        var nitems = _col.labels ? _col.labels.length : _col.values.length
+        var height = LINE_HEIGHT*nitems
+        var px = (y,dmin,dmax) => dmin + (y/height) * (dmax-dmin)
+        if(_col.type == 'continuous'){
+            y -= TEXT_SIZE / 2
+            height -= TEXT_SIZE
+        }
+
+        // Deal with mouse being above highest number or lower than lowest
+        if(y < 0)
+            y = 0
+        if(_col.na && y > height){
+            return null
+        }
+        else if(y > height)
+            y = height-1
+        
+        if(_col.type == 'discrete'){
+            var item_index = Math.floor(y/height*nitems)
+            return item_index
+        }
+        else if(_col.type == 'continuous'){
+            var dmin = _col.labels[0]
+            var dmax = _col.labels[_col.labels.length-1]
+            return [px(y-6, dmin, dmax), px(y+6, dmin, dmax)]
+        }
+    },
+
+    on_column_mousedown($body, _col, e){
+        var selection = this.calc_selection($body, _col, e)
+        console.log('mousedown', selection)
+
+        this.model.set('selecting',{
+            column:_col,
+            selection:selection,
+        })
+    },
+
+    combine_selections(start, end, column){
+        console.assert(!(start === null && end === null))
+        var selection = {
+            column: column,
+        }
+        if(column.type == 'continuous'){
+            if(start === null || end === null){
+                selection.include_nan = true
+                console.log('unimplimented null case')
+            } else {
+                selection.start = Math.min(start[0],end[0])
+                selection.end = Math.max(start[0],end[1])
+            }
+        }
+        else if(column.type == 'discrete'){
+            if(start === null)
+                start = column.values.length-1
+            if(end === null)
+                end = column.values.length-1
+            selection.start = Math.min(start, end)
+            selection.end = Math.max(start, end)
+        }
+        console.log(selection)
+    },
+
+    on_column_mouseup($body, _col, e){
+        var end = this.calc_selection($body, _col, e)
+        console.log('mouseup', end)
+
+        var selecting = this.model.get('selecting')
+        var start = selecting.selection
+
+        if(selecting.column != _col){
+            console.log('cross columns')
+            this.model.set('selecting',null)
+            return
+        }
+
+        var old_selections = this.model.get('selections').filter(n => n.column == _col)
+
+        if(start === null && end === null){
+            console.log('selecting null')
+            this.model.set('selections', [...selections, {
+                column:_col,
+                includ_nan: true,
+            }])
+        }
+        else if(selecting.column == _col){
+            this.combine_selections(start, end, _col)
+            console.log('cross columns')
+        }
+        this.model.set('selecting',null)
     }
 });
 
+// window.jeda_onclick = function(elm, e, line_height, nitems){
+//     var rect = elm.getBoundingClientRect();
+//     var y = e.clientY - rect.top - BODY_PADDING;
+//     var has_nan = !!elm.querySelector('.nan')
+//     var height = line_height*nitems
+//     var px = (y,dmin,dmax) => dmin + (y/height) * (dmax-dmin)
+    
+//     if(y < 0)
+//         y = 0
+//     if(has_nan && y > height){
+//         console.log('hit nan')
+//         return
+//     }
+//     else if(y > height)
+//         y = height
+
+//     if(elm.classList.contains('discrete')){
+//         var item_index = Math.floor(y/height*nitems)
+//         console.log(item_index)
+//     }
+
+//     else if(elm.classList.contains('continuous')){
+//         var labels = elm.querySelectorAll('.name:not(.nan)')
+//         var dmin = +labels[0].textContent
+//         var dmax = +labels[labels.length-1].textContent
+//         console.log([px(y-6, dmin, dmax), px(y+6, dmin, dmax)])
+//     }
+
+//     // if(y < 6)
+//     // console.log(y, height, percent)
+// }
 
 module.exports = {
     JedaModel: JedaModel,

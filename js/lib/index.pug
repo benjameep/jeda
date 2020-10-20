@@ -14,6 +14,7 @@
       .column
         .head
           h2= column.name
+
         .body(class=column.type)
           - var bar_height = column.type == 'discrete' ? DISCRETE_BAR_HEIGHT : CONTINUOUS_BAR_HEIGHT;
           - var pad_top = (LINE_HEIGHT - bar_height) / 2;
