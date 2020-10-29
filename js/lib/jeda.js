@@ -2,6 +2,7 @@ var widgets = require('@jupyter-widgets/base');
 var _ = require('lodash');
 require('./style.scss')
 var template = require('./index.pug')
+const Backbone = require('backbone')
 
 // See example.py for the kernel counterpart to this file.
 
@@ -21,6 +22,76 @@ var template = require('./index.pug')
 
 // When serialiazing the entire widget state for embedding, only values that
 // differ from the defaults will be specified.
+// var ColumnModel = Backbone.Model.extend({
+//     defaults: {
+//         name:'',
+//         na:0,
+//         values:[],
+//         counts:[],
+//     }
+// })
+
+var DiscreteColumnModel = Backbone.Model.extend({
+    defaults: {
+        type:'discrete'
+    }
+})
+
+var ContinuousColumnModel = Backbone.Model.extend({    
+    defaults: {
+        min:0,
+        max:0,
+        num_labels: 6,
+    },
+
+    initialize(){
+        this.set_labels()
+        this.on('change:min change:max', this.set_labels, this)
+    },
+
+    set_labels(){
+        var min = this.get('min')
+        var max = this.get('max')
+        var count = this.get('num_labels')
+        var n = (max-min)/count
+        var lvl = Math.pow(10,Math.floor(Math.log10(n)))
+        var powers = [1,2,5,10]
+        // Don't use 2.5 if n is between 1-10, other wise put it in
+        if(lvl != 1)
+            powers.splice(2,0,2.5)
+        var closest = 0
+        var closest_dist = Math.abs(n-lvl)
+        for(var i = 1; i < powers.length; i++){
+            var dist = Math.abs(n - lvl*powers[i])
+            if(dist < closest_dist){
+            closest = i
+            closest_dist = dist
+            }
+        }
+        var gap = lvl*powers[closest]
+        var out = []
+        var i = Math.floor(min/gap)*gap
+        var cap = Math.ceil(max/gap)*gap
+        for(; i <= cap; i += gap)
+            out.push(i)
+        this.set({labels: out})
+    }
+})
+
+var ColumnList = Backbone.Collection.extend({
+    modelId(col){ return col.name },
+
+    // model: DiscreteColumnModel,
+    model: function(col, options){
+        if(col.type == 'discrete')
+            return new DiscreteColumnModel(col, options)
+        else if(col.type == 'continuous')
+            return new ContinuousColumnModel(col, options)
+        else
+            throw new Error('Unknown Column Type: ', col.type)
+    },
+})
+
 var JedaModel = widgets.DOMWidgetModel.extend({
     defaults: _.extend(widgets.DOMWidgetModel.prototype.defaults(), {
         _model_name : 'JedaModel',
@@ -32,84 +103,32 @@ var JedaModel = widgets.DOMWidgetModel.extend({
         columns : [],
         selecting: null,
         selections: [],
-    })
+    }),
+
+    initialize(){
+        widgets.DOMWidgetModel.prototype.initialize.apply(this, arguments)
+        this.columns = new ColumnList(this.get('columns'))
+        this.on('change:columns', () => this.columns.set(this.get('columns')))
+    },
 });
 
-function calc_labels(min, max, count=6){
-    var n = (max-min)/count
-    var lvl = Math.pow(10,Math.floor(Math.log10(n)))
-    var powers = [1,2,5,10]
-    // Don't use 2.5 if n is between 1-10, other wise put it in
-    if(lvl != 1)
-        powers.splice(2,0,2.5)
-    var closest = 0
-    var closest_dist = Math.abs(n-lvl)
-    for(var i = 1; i < powers.length; i++){
-        var dist = Math.abs(n - lvl*powers[i])
-        if(dist < closest_dist){
-        closest = i
-        closest_dist = dist
-        }
-    }
-    var gap = lvl*powers[closest]
-    var out = []
-    var i = Math.floor(min/gap)*gap
-    var cap = Math.ceil(max/gap)*gap
-    for(; i <= cap; i += gap)
-        out.push(i)
-    return out
-}
-
-function linear_map(val, dmin, dmax, rmin, rmax){
-    return ((val-dmin)/(dmax-dmin))*(rmax-rmin)+rmin
-}
-
-const TEXT_SIZE = 14;
+const TEXT_SIZE = 12;
 const LINE_HEIGHT = 16;
 const BAR_HEIGHT = 6;
 const BODY_PADDING = 6;
 
 // Custom View. Renders the widget model.
 var JedaView = widgets.DOMWidgetView.extend({
-    tagName: 'div',
-    className:'benjamin',
+    className:'jeda',
+
+    initialize(){
+        widgets.DOMWidgetView.prototype.initialize.apply(this, arguments)
+        this.model.columns.on('change add remove reset', this.render, this)
+    },
 
     // Defines how the widget gets rendered into the DOM
     render: function() {
-        this.columns_changed();
-
-        // Observe changes in the value traitlet in Python, and define
-        // a custom callback.
-        this.model.on('change:columns', this.columns_changed, this);
-    },
-
-    columns_changed: function() {
-        var columns = this.model.get('columns')
-        
-
-        columns.forEach(col => {
-            if(col.type == 'continuous'){
-                col.labels = calc_labels(col.min, col.max)
-                // dmin = col.labels[0]
-                // dmax = col.labels[col.labels.length-1]
-                // rmin = (TEXT_SIZE-BAR_HEIGHT)/2
-                // rmax = (col.labels.length * LINE_HEIGHT) - (LINE_HEIGHT+BAR_HEIGHT)/2
-                // col.values.forEach(val => {
-                //     val.y = Math.round(linear_map(val.name, dmin, dmax, rmin, rmax))
-                // })
-            }
-        })
-
-        console.log(JSON.stringify(columns))
-
-
-        this.el.innerHTML = template({columns});
-
-        this.el.querySelectorAll('.column').forEach(($col,i) => {
-            var $body = $col.querySelector('.body')
-            $body.addEventListener('mousedown',this.on_column_mousedown.bind(this,$body,columns[i]))
-            $body.addEventListener('mouseup',this.on_column_mouseup.bind(this,$body,columns[i]))
-        })
+        this.el.innerHTML = template({columns:this.model.columns.toJSON()})        
     },
 
     calc_selection($body, _col, e){
@@ -207,38 +226,6 @@ var JedaView = widgets.DOMWidgetView.extend({
         this.model.set('selecting',null)
     }
 });
-
-// window.jeda_onclick = function(elm, e, line_height, nitems){
-//     var rect = elm.getBoundingClientRect();
-//     var y = e.clientY - rect.top - BODY_PADDING;
-//     var has_nan = !!elm.querySelector('.nan')
-//     var height = line_height*nitems
-//     var px = (y,dmin,dmax) => dmin + (y/height) * (dmax-dmin)
-    
-//     if(y < 0)
-//         y = 0
-//     if(has_nan && y > height){
-//         console.log('hit nan')
-//         return
-//     }
-//     else if(y > height)
-//         y = height
-
-//     if(elm.classList.contains('discrete')){
-//         var item_index = Math.floor(y/height*nitems)
-//         console.log(item_index)
-//     }
-
-//     else if(elm.classList.contains('continuous')){
-//         var labels = elm.querySelectorAll('.name:not(.nan)')
-//         var dmin = +labels[0].textContent
-//         var dmax = +labels[labels.length-1].textContent
-//         console.log([px(y-6, dmin, dmax), px(y+6, dmin, dmax)])
-//     }
-
-//     // if(y < 6)
-//     // console.log(y, height, percent)
-// }
 
 module.exports = {
     JedaModel: JedaModel,

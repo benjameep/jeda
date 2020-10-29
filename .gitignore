@@ -4,6 +4,7 @@ dist/
 build/
 *.py[cod]
 node_modules/
+trash/
 
 # Compiled javascript
 jeda/static/
