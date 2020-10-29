@@ -4,37 +4,47 @@ require('./style.scss')
 var template = require('./index.pug')
 const Backbone = require('backbone')
 
-// See example.py for the kernel counterpart to this file.
 
-
-// Custom Model. Custom widgets models must at least provide default values
-// for model attributes, including
-//
-//  - `_view_name`
-//  - `_view_module`
-//  - `_view_module_version`
-//
-//  - `_model_name`
-//  - `_model_module`
-//  - `_model_module_version`
-//
-//  when different from the base class.
-
-// When serialiazing the entire widget state for embedding, only values that
-// differ from the defaults will be specified.
-// var ColumnModel = Backbone.Model.extend({
-//     defaults: {
-//         name:'',
-//         na:0,
-//         values:[],
-//         counts:[],
-//     }
-// })
+const TEXT_SIZE = 12;
+const LINE_HEIGHT = 16;
+const BODY_PADDING = 6;
 
 var DiscreteColumnModel = Backbone.Model.extend({
-    defaults: {
-        type:'discrete'
-    }
+    defaults: {},
+
+    pixel_to_value_index(y){
+        var num_values = this.get('values').length
+        var height = LINE_HEIGHT*num_values
+        if(y < 0)
+            return 0
+        if(y > height)
+            return this.get('na') ? null : num_values-1
+        return Math.floor(y/height*num_values)
+    },
+
+    mousedown(y){ 
+        this.selection_start = this.pixel_to_value_index(y) 
+    },
+
+    mouseup(y, append, stretch){
+        var start = this.selection_start
+        var end = this.pixel_to_value_index(y)
+        
+        if(start == null && end == null)
+            return this.set({select_na:true})
+        if(start == null)
+            start = this.get('values').length-1
+        if(end == null)
+            end = this.get('values').length-1
+        
+        var [start, end] = [Math.min(start, end), Math.max(start, end)]
+        
+        var selections = this.get('selections')
+        if(!append && !stretch)
+            selections = []
+
+        console.log(this.get('values')[start], this.get('values')[end])
+    },
 })
 
 var ContinuousColumnModel = Backbone.Model.extend({    
@@ -46,7 +56,7 @@ var ContinuousColumnModel = Backbone.Model.extend({
 
     initialize(){
         this.set_labels()
-        this.on('change:min change:max', this.set_labels, this)
+        this.on('change:min change:max change:num_labels', this.set_labels, this)
     },
 
     set_labels(){
@@ -75,7 +85,50 @@ var ContinuousColumnModel = Backbone.Model.extend({
         for(; i <= cap; i += gap)
             out.push(i)
         this.set({labels: out})
-    }
+    },
+
+    pixel_to_value_range(y){
+        var labels = this.get('labels')
+        var height = LINE_HEIGHT*labels.length
+        var px = (y,dmin,dmax) => Math.min(Math.max(dmin + (y/height) * (dmax-dmin), dmin),dmax)
+        y -= TEXT_SIZE / 2
+        height -= TEXT_SIZE
+
+        if(y < 0)
+            y = 0
+        if(this.get('na') && y > height)
+            return null
+        else if(y > height)
+            y = height-1
+        
+        var dmin = labels[0]
+        var dmax = labels[labels.length-1]
+        return [px(y-TEXT_SIZE/2, dmin, dmax), px(y+TEXT_SIZE/2, dmin, dmax)]
+    },
+
+    mousedown(y){ 
+        this.selection_start = this.pixel_to_value_range(y)
+    },
+    mouseup(y, append, stretch){
+        var max = this.get('labels').slice(-1)[0]
+        var start = this.selection_start
+        var end = this.pixel_to_value_range(y)
+        
+        if(start == null && end == null)
+            return this.set({select_na:true})
+        if(start == null)
+            start = [max,max]
+        if(end == null)
+            end = [max,max]
+        
+        var [start, end] = [Math.min(start[0], end[0]), Math.max(start[1], end[1])]
+        
+        var selections = this.get('selections')
+        if(!append && !stretch)
+            selections = []
+
+        console.log(start, end)
+    },
 })
 
 var ColumnList = Backbone.Collection.extend({
@@ -101,7 +154,6 @@ var JedaModel = widgets.DOMWidgetModel.extend({
         _model_module_version : '0.1.0',
         _view_module_version : '0.1.0',
         columns : [],
-        selecting: null,
         selections: [],
     }),
 
@@ -112,18 +164,18 @@ var JedaModel = widgets.DOMWidgetModel.extend({
     },
 });
 
-const TEXT_SIZE = 12;
-const LINE_HEIGHT = 16;
-const BAR_HEIGHT = 6;
-const BODY_PADDING = 6;
-
 // Custom View. Renders the widget model.
 var JedaView = widgets.DOMWidgetView.extend({
     className:'jeda',
 
+    events: {
+        'mousedown .column .body': 'mousedown',
+    },
+
     initialize(){
         widgets.DOMWidgetView.prototype.initialize.apply(this, arguments)
         this.model.columns.on('change add remove reset', this.render, this)
+        window.addEventListener('mouseup', this.mouseup.bind(this))
     },
 
     // Defines how the widget gets rendered into the DOM
@@ -131,100 +183,25 @@ var JedaView = widgets.DOMWidgetView.extend({
         this.el.innerHTML = template({columns:this.model.columns.toJSON()})        
     },
 
-    calc_selection($body, _col, e){
-        var rect = $body.getBoundingClientRect();
+    mousedown(e){
+        var $col = e.target.closest('.column')
+        if(!$col) throw new Error('Mouse down was not in column')
+        var col_name = $col.dataset.name
+        var rect = $col.querySelector('.body').getBoundingClientRect();
         var y = e.clientY - rect.top - BODY_PADDING;
-        var nitems = _col.labels ? _col.labels.length : _col.values.length
-        var height = LINE_HEIGHT*nitems
-        var px = (y,dmin,dmax) => dmin + (y/height) * (dmax-dmin)
-        if(_col.type == 'continuous'){
-            y -= TEXT_SIZE / 2
-            height -= TEXT_SIZE
-        }
-
-        // Deal with mouse being above highest number or lower than lowest
-        if(y < 0)
-            y = 0
-        if(_col.na && y > height){
-            return null
-        }
-        else if(y > height)
-            y = height-1
-        
-        if(_col.type == 'discrete'){
-            var item_index = Math.floor(y/height*nitems)
-            return item_index
-        }
-        else if(_col.type == 'continuous'){
-            var dmin = _col.labels[0]
-            var dmax = _col.labels[_col.labels.length-1]
-            return [px(y-6, dmin, dmax), px(y+6, dmin, dmax)]
-        }
+        var col = this.model.columns.get(col_name)
+        col.mousedown(y)
+        this.currently_mousedown_on = col
     },
 
-    on_column_mousedown($body, _col, e){
-        var selection = this.calc_selection($body, _col, e)
-        console.log('mousedown', selection)
-
-        this.model.set('selecting',{
-            column:_col,
-            selection:selection,
-        })
+    mouseup(e){
+        if(!this.currently_mousedown_on) return
+        var $col = this.el.querySelector(`.column[data-name="${this.currently_mousedown_on.get('name')}"]`)
+        var rect = $col.querySelector('.body').getBoundingClientRect();
+        var y = e.clientY - rect.top - BODY_PADDING;
+        this.currently_mousedown_on.mouseup(y, e.ctrlKey, e.shiftKey)
+        this.currently_mousedown_on = null
     },
-
-    combine_selections(start, end, column){
-        console.assert(!(start === null && end === null))
-        var selection = {
-            column: column,
-        }
-        if(column.type == 'continuous'){
-            if(start === null || end === null){
-                selection.include_nan = true
-                console.log('unimplimented null case')
-            } else {
-                selection.start = Math.min(start[0],end[0])
-                selection.end = Math.max(start[0],end[1])
-            }
-        }
-        else if(column.type == 'discrete'){
-            if(start === null)
-                start = column.values.length-1
-            if(end === null)
-                end = column.values.length-1
-            selection.start = Math.min(start, end)
-            selection.end = Math.max(start, end)
-        }
-        console.log(selection)
-    },
-
-    on_column_mouseup($body, _col, e){
-        var end = this.calc_selection($body, _col, e)
-        console.log('mouseup', end)
-
-        var selecting = this.model.get('selecting')
-        var start = selecting.selection
-
-        if(selecting.column != _col){
-            console.log('cross columns')
-            this.model.set('selecting',null)
-            return
-        }
-
-        var old_selections = this.model.get('selections').filter(n => n.column == _col)
-
-        if(start === null && end === null){
-            console.log('selecting null')
-            this.model.set('selections', [...selections, {
-                column:_col,
-                includ_nan: true,
-            }])
-        }
-        else if(selecting.column == _col){
-            this.combine_selections(start, end, _col)
-            console.log('cross columns')
-        }
-        this.model.set('selecting',null)
-    }
 });
 
 module.exports = {

@@ -10,7 +10,7 @@
 
 .columns
   each column in columns ? columns : []
-    .column
+    .column(data-name=column.name)
       .head
         h2= column.name
 
